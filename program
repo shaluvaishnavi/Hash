@@ -1,0 +1,155 @@
+// Including necessary header files
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define a structure to represent key-value pairs
+struct KeyValuePair {
+    char key[50];
+    int value;
+    struct KeyValuePair* next;
+};
+
+// Define a structure to represent the hash table
+struct HashTable {
+    int size;
+    struct KeyValuePair** table;
+};
+
+// Function to create a new key-value pair
+struct KeyValuePair* createKeyValuePair(const char* key, int value) {
+    struct KeyValuePair* newPair = (struct KeyValuePair*)malloc(sizeof(struct KeyValuePair));
+    if (newPair != NULL) {
+        strcpy(newPair->key, key);
+        newPair->value = value;
+        newPair->next = NULL;
+    }
+    return newPair;
+}
+
+// Function to create a new hash table
+struct HashTable* createHashTable(int size) {
+    struct HashTable* newTable = (struct HashTable*)malloc(sizeof(struct HashTable));
+    if (newTable != NULL) {
+        newTable->size = size;
+        newTable->table = (struct KeyValuePair**)calloc(size, sizeof(struct KeyValuePair*));
+    }
+    return newTable;
+}
+
+// Function to calculate the hash value of a key
+unsigned int hashFunction(const char* key, int tableSize) {
+    unsigned int hash = 0;
+    while (*key) {
+        hash = (hash << 5) + *key++;
+    }
+    return hash % tableSize;
+}
+
+// Function to insert a key-value pair into the hash table
+void insert(struct HashTable* hashTable, const char* key, int value) {
+    unsigned int index = hashFunction(key, hashTable->size);
+    struct KeyValuePair* newPair = createKeyValuePair(key, value);
+    newPair->next = hashTable->table[index];
+    hashTable->table[index] = newPair;
+}
+
+// Function to retrieve the value associated with a key from the hash table
+int retrieve(struct HashTable* hashTable, const char* key) {
+    unsigned int index = hashFunction(key, hashTable->size);
+    struct KeyValuePair* current = hashTable->table[index];
+    while (current != NULL) {
+        if (strcmp(current->key, key) == 0) {
+            return current->value;
+        }
+        current = current->next;
+    }
+    return -1; // Return -1 if the key is not found
+}
+
+// Function to remove a key-value pair from the hash table
+void removeKey(struct HashTable* hashTable, const char* key) {
+    unsigned int index = hashFunction(key, hashTable->size);
+    struct KeyValuePair* current = hashTable->table[index];
+    struct KeyValuePair* previous = NULL;
+
+    while (current != NULL) {
+        if (strcmp(current->key, key) == 0) {
+            if (previous == NULL) {
+                hashTable->table[index] = current->next;
+            } else {
+                previous->next = current->next;
+            }
+
+            free(current);
+            return;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+}
+
+// Function to display the contents of the hash table
+void displayHashTable(struct HashTable* hashTable) {
+    for (int i = 0; i < hashTable->size; i++) {
+        printf("[%d] -> ", i);
+
+        struct KeyValuePair* current = hashTable->table[i];
+        while (current != NULL) {
+            printf("(%s, %d) -> ", current->key, current->value);
+            current = current->next;
+        }
+
+        printf("NULL\n");
+    }
+}
+
+// Function to free the memory allocated for the hash table
+void freeHashTable(struct HashTable* hashTable) {
+    for (int i = 0; i < hashTable->size; i++) {
+        struct KeyValuePair* current = hashTable->table[i];
+        while (current != NULL) {
+            struct KeyValuePair* temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+
+    free(hashTable->table);
+    free(hashTable);
+}
+
+// Main function
+int main() {
+    // Create a hash table with a size of 10
+    struct HashTable* hashTable = createHashTable(10);
+
+    // Insert key-value pairs into the hash table
+    insert(hashTable, "Alaric", 35);
+    insert(hashTable, "Faustus", 28);
+    insert(hashTable, "Wilbur", 30);
+    insert(hashTable, "Melcha", 31);
+
+    // Display the initial state of the hash table
+    printf("Initial Hash Table:\n");
+    displayHashTable(hashTable);
+    printf("\n");
+
+    // Retrieve and print values for specific keys
+    printf("Value for key 'Alaric': %d\n", retrieve(hashTable, "Alaric"));
+    printf("Value for key 'Faustus': %d\n", retrieve(hashTable, "Faustus"));
+    printf("Value for key 'Cambria': %d\n", retrieve(hashTable, "Cambria"));
+    printf("\n");
+
+    // Remove a key-value pair and display the updated hash table
+    printf("Deleting key 'Faustus'\n");
+    removeKey(hashTable, "Faustus");
+    displayHashTable(hashTable);
+    printf("\n");
+
+    // Free the memory allocated for the hash table
+    freeHashTable(hashTable);
+
+    return 0;
+}
